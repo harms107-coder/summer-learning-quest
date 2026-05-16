@@ -3100,7 +3100,7 @@ async function playBundledSpeech(text) {
 
 async function playRecordedSpeech(text) {
   const slug = audioSlug(text);
-  const audio = new Audio(`assets/recorded-audio/${slug}.wav?v=1`);
+  const audio = new Audio(`assets/recorded-audio/${slug}.wav?v=2`);
   if (currentUtterance && "speechSynthesis" in window) window.speechSynthesis.cancel();
   await audio.play();
 }
