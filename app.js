@@ -1145,6 +1145,7 @@ const state = {
 let sharedAudioContext = null;
 let audioUnlockBound = false;
 let currentSpeechSource = null;
+let currentUtterance = null;
 const speechBufferCache = new Map();
 
 const profilesSeed = [
@@ -3087,6 +3088,7 @@ async function playBundledSpeech(text) {
     if (!response.ok) throw new Error("Speech clip missing");
     const data = await response.arrayBuffer();
     buffer = await context.decodeAudioData(data.slice(0));
+    if (!buffer.duration || buffer.duration < 0.05) throw new Error("Speech clip is empty");
     speechBufferCache.set(slug, buffer);
   }
   if (currentSpeechSource) currentSpeechSource.stop();
@@ -3099,10 +3101,13 @@ async function playBundledSpeech(text) {
 function speakWithBrowserVoice(text) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 0.78;
-  utterance.pitch = 1.08;
-  window.speechSynthesis.speak(utterance);
+  currentUtterance = new SpeechSynthesisUtterance(text);
+  currentUtterance.lang = "en-US";
+  currentUtterance.rate = 0.78;
+  currentUtterance.pitch = 1.08;
+  const voices = window.speechSynthesis.getVoices();
+  currentUtterance.voice = voices.find((voice) => voice.lang?.startsWith("en-US")) || voices.find((voice) => voice.lang?.startsWith("en")) || null;
+  window.speechSynthesis.speak(currentUtterance);
 }
 
 function submitAnswer() {
