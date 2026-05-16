@@ -1144,7 +1144,8 @@ const state = {
 
 let sharedAudioContext = null;
 let audioUnlockBound = false;
-let speechAudio = null;
+let currentSpeechSource = null;
+const speechBufferCache = new Map();
 
 const profilesSeed = [
   {
@@ -3076,12 +3077,23 @@ function audioSlug(text) {
 }
 
 async function playBundledSpeech(text) {
-  if (speechAudio) {
-    speechAudio.pause();
-    speechAudio = null;
+  const context = getAudioContext();
+  if (!context) throw new Error("No audio context");
+  if (context.state === "suspended") await context.resume();
+  const slug = audioSlug(text);
+  let buffer = speechBufferCache.get(slug);
+  if (!buffer) {
+    const response = await fetch(`assets/audio/${slug}.wav?v=1`);
+    if (!response.ok) throw new Error("Speech clip missing");
+    const data = await response.arrayBuffer();
+    buffer = await context.decodeAudioData(data.slice(0));
+    speechBufferCache.set(slug, buffer);
   }
-  speechAudio = new Audio(`assets/audio/${audioSlug(text)}.wav?v=1`);
-  await speechAudio.play();
+  if (currentSpeechSource) currentSpeechSource.stop();
+  currentSpeechSource = context.createBufferSource();
+  currentSpeechSource.buffer = buffer;
+  currentSpeechSource.connect(context.destination);
+  currentSpeechSource.start();
 }
 
 function speakWithBrowserVoice(text) {
