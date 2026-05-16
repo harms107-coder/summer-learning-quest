@@ -1146,9 +1146,6 @@ let sharedAudioContext = null;
 let audioUnlockBound = false;
 let currentSpeechSource = null;
 let currentUtterance = null;
-let recordedSpeechAudio = null;
-let recordedSpeechMap = null;
-let recordedSpeechTimer = null;
 const speechBufferCache = new Map();
 
 const profilesSeed = [
@@ -3101,30 +3098,11 @@ async function playBundledSpeech(text) {
   currentSpeechSource.start();
 }
 
-async function loadRecordedSpeech() {
-  if (!recordedSpeechMap) {
-    const response = await fetch("assets/thurston-voice-map.json?v=1");
-    if (!response.ok) throw new Error("Recorded speech map missing");
-    recordedSpeechMap = await response.json();
-  }
-  if (!recordedSpeechAudio) {
-    recordedSpeechAudio = new Audio("assets/thurston-voice.m4a?v=1");
-    recordedSpeechAudio.preload = "auto";
-  }
-}
-
 async function playRecordedSpeech(text) {
-  await loadRecordedSpeech();
-  const clip = recordedSpeechMap[text.toLowerCase()];
-  if (!clip) throw new Error("Recorded speech clip missing");
+  const slug = audioSlug(text);
+  const audio = new Audio(`assets/recorded-audio/${slug}.wav?v=1`);
   if (currentUtterance && "speechSynthesis" in window) window.speechSynthesis.cancel();
-  if (recordedSpeechTimer) clearTimeout(recordedSpeechTimer);
-  recordedSpeechAudio.pause();
-  recordedSpeechAudio.currentTime = clip.start;
-  await recordedSpeechAudio.play();
-  recordedSpeechTimer = setTimeout(() => {
-    recordedSpeechAudio.pause();
-  }, Math.max(120, (clip.end - clip.start) * 1000 + 80));
+  await audio.play();
 }
 
 function speakWithBrowserVoice(text) {
@@ -3321,6 +3299,5 @@ if ("serviceWorker" in navigator) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
 
-loadRecordedSpeech().catch(() => {});
 state.profileId = profilesSeed[0].id;
 render();
