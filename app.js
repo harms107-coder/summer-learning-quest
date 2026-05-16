@@ -3070,7 +3070,7 @@ function speakCurrentPrompt() {
   const item = state.session?.words[state.session.index];
   if (!item?.speakText) return;
   unlockAudio();
-  playBundledSpeech(item.speakText).catch(() => speakWithBrowserVoice(item.speakText));
+  speakWithBrowserVoice(item.speakText);
 }
 
 function audioSlug(text) {
