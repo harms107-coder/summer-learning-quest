@@ -111,6 +111,11 @@ button {
   gap: 30px;
 }
 
+.home-actions {
+  display: flex;
+  justify-content: center;
+}
+
 .brand-lockup,
 .topbar,
 .game-topbar {
@@ -1073,6 +1078,48 @@ button {
   background: var(--panel);
   box-shadow: var(--shadow);
   backdrop-filter: blur(18px);
+}
+
+.parent-stats-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.parent-stat-card {
+  display: grid;
+  gap: 18px;
+  padding: clamp(18px, 4vw, 26px);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.parent-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.parent-stat-head img {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.parent-stat-head h2,
+.parent-stat-head p {
+  margin: 0;
+}
+
+.parent-stat-head p {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.parent-grid.compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .mode-switch {

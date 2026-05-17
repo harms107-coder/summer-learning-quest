@@ -1710,6 +1710,7 @@ function render() {
     <main class="shell">
       ${renderBackdrop()}
       ${state.screen === "home" ? renderHome() : ""}
+      ${state.screen === "parent" ? renderParentStats() : ""}
       ${state.screen === "dashboard" ? renderDashboard() : ""}
       ${state.screen === "play" ? renderGame() : ""}
       ${state.screen === "summary" ? renderSummary() : ""}
@@ -1757,7 +1758,73 @@ function renderHome() {
           })
           .join("")}
       </div>
+      <div class="home-actions">
+        <button class="secondary-btn" data-action="parent-stats">Parent Stats</button>
+      </div>
     </section>
+  `;
+}
+
+function renderParentStats() {
+  return `
+    <section class="dashboard-view">
+      <header class="topbar">
+        <button class="icon-btn" data-action="home" aria-label="Back to players">←</button>
+        <div>
+          <p class="eyebrow">Parent View</p>
+          <h1>Stats</h1>
+        </div>
+      </header>
+      <section class="parent-stats-grid">
+        ${profilesSeed.map((seed) => renderParentStatsCard(store.profiles[seed.id])).join("")}
+      </section>
+    </section>
+  `;
+}
+
+function renderParentStatsCard(profile) {
+  ensureProfileShape(profile);
+  const spellingStats = Object.entries(profile.wordStats || {}).map(([word, stat]) => ({ word, ...stat }));
+  const spellingCorrect = spellingStats.reduce((sum, stat) => sum + stat.correct, 0);
+  const spellingMissed = spellingStats.reduce((sum, stat) => sum + stat.missed, 0);
+  const spellingAttempts = spellingCorrect + spellingMissed;
+  const spellingAccuracy = spellingAttempts ? Math.round((spellingCorrect / spellingAttempts) * 100) : 0;
+  const mathStats = Object.values(profile.math.stats || {});
+  const mathAttempts = mathStats.reduce((sum, stat) => sum + stat.attempts, 0);
+  const mathCorrect = mathStats.reduce((sum, stat) => sum + stat.correct, 0);
+  const mathAccuracy = mathAttempts ? Math.round((mathCorrect / mathAttempts) * 100) : 0;
+  const needsWords = spellingStats
+    .filter((stat) => stat.missed > 0)
+    .sort((left, right) => right.missed - left.missed)
+    .slice(0, 5);
+  const needsFacts = getFactsNeedingPractice(profile.math).slice(0, 5);
+  const allowance = getAllowanceProgress(profile);
+  return `
+    <article class="parent-stat-card ${profile.color}">
+      <div class="parent-stat-head">
+        <img src="${profile.photo}" alt="" style="object-position:${profile.photoPosition || "center"}" onerror="this.style.display='none'" />
+        <div>
+          <h2>${profile.name}</h2>
+          <p>$${allowance.earnedDollars} earned • ${profile.points.toLocaleString()} points</p>
+        </div>
+      </div>
+      <div class="parent-grid compact">
+        <div><span class="metric-label">Word Accuracy</span><strong>${profile.kind === "early" ? "—" : `${spellingAccuracy}%`}</strong></div>
+        <div><span class="metric-label">Math Accuracy</span><strong>${mathAttempts ? `${mathAccuracy}%` : "—"}</strong></div>
+        <div><span class="metric-label">Word Sessions</span><strong>${profile.sessionsDone || 0}</strong></div>
+        <div><span class="metric-label">Math Sessions</span><strong>${profile.math.sessionsDone || 0}</strong></div>
+      </div>
+      <div class="insight-grid">
+        <div>
+          <p class="metric-label">Words To Watch</p>
+          <p>${profile.kind === "early" ? "Early games do not use spelling review yet." : needsWords.length ? needsWords.map((item) => item.word).join(", ") : "Nothing flagged yet."}</p>
+        </div>
+        <div>
+          <p class="metric-label">Facts To Watch</p>
+          <p>${needsFacts.length ? needsFacts.map((item) => item.label).join(", ") : "Nothing flagged yet."}</p>
+        </div>
+      </div>
+    </article>
   `;
 }
 
@@ -2500,6 +2567,7 @@ function handleAction(action, dataset) {
     state.profileId = dataset.profile;
     state.screen = "dashboard";
   }
+  if (action === "parent-stats") state.screen = "parent";
   if (action === "set-mode") {
     state.mode = dataset.mode;
     state.session = null;
