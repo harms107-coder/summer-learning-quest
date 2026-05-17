@@ -1600,7 +1600,14 @@ function loadStore() {
           return [
             profile.id,
             savedMatchesCurrentList
-              ? { ...fallback.profiles[profile.id], ...savedProfile, ...profile, wordListVersion: profile.listKey }
+              ? {
+                  ...fallback.profiles[profile.id],
+                  ...savedProfile,
+                  ...profile,
+                  rewardCyclesCompleted:
+                    savedProfile.rewardCyclesCompleted ?? Math.floor((savedProfile.points || 0) / ALLOWANCE_POINT_GOAL),
+                  wordListVersion: profile.listKey
+                }
               : fallback.profiles[profile.id]
           ];
         })
@@ -1988,6 +1995,12 @@ function renderMathDashboard(profile) {
 
 function getAllowanceProgress(profile) {
   const points = profile.points || 0;
+  if (profile.kind === "early") {
+    const earnedDollars = Math.floor(points / ALLOWANCE_POINT_GOAL) * 10;
+    const pointsIntoGoal = points % ALLOWANCE_POINT_GOAL;
+    const percent = Math.min(100, Math.round((pointsIntoGoal / ALLOWANCE_POINT_GOAL) * 100));
+    return { earnedDollars, pointsIntoGoal, percent };
+  }
   const earnedDollars = (profile.rewardCyclesCompleted || 0) * 10;
   const rewardsAvailableByPoints = Math.floor(points / ALLOWANCE_POINT_GOAL);
   const hasLockedReward = rewardsAvailableByPoints > (profile.rewardCyclesCompleted || 0);
