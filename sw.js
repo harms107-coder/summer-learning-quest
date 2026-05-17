@@ -1,9 +1,9 @@
-const CACHE_NAME = "word-quest-summer-v46";
+const CACHE_NAME = "word-quest-summer-v47";
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./styles.css?v=23",
-  "./app.js?v=45",
+  "./app.js?v=46",
   "./word-lists.js?v=2",
   "./generated-clues.js?v=2",
   "./manifest.webmanifest",

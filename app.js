@@ -1797,7 +1797,7 @@ function renderParentStatsCard(profile) {
     .filter((stat) => stat.missed > 0)
     .sort((left, right) => right.missed - left.missed)
     .slice(0, 5);
-  const needsFacts = getFactsNeedingPractice(profile.math).slice(0, 5);
+  const needsFacts = getMathReviewFacts(profile.math).slice(0, 5);
   const allowance = getAllowanceProgress(profile);
   return `
     <article class="parent-stat-card ${profile.color}">
