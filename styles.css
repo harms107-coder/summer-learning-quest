@@ -427,6 +427,29 @@ button {
   font-weight: 800;
 }
 
+.reward-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.reward-checklist span {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 7px 11px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.reward-checklist span.done {
+  border-color: rgba(69, 230, 181, 0.42);
+  background: rgba(69, 230, 181, 0.16);
+  color: #c7ffe9;
+}
+
 .next-card {
   display: flex;
   align-items: center;

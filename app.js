@@ -4,6 +4,12 @@ import { GENERATED_CLUES } from "./generated-clues.js?v=2";
 const STORAGE_KEY = "wordQuestSummer:v1";
 const SESSION_POINT_GOAL = 100;
 const ALLOWANCE_POINT_GOAL = 1000;
+const REWARD_REQUIREMENTS = {
+  spellingSessions: 3,
+  mathSessions: 3,
+  mathLevels: 2,
+  mathModes: 2
+};
 const REVIEW_WORDS_PER_SESSION = 3;
 const SHAKY_WORDS_PER_SESSION = 2;
 const SESSION_WORD_BUFFER = 45;
@@ -600,6 +606,96 @@ const CLUES = {
   badge: "A small award that shows progress.",
   quest: "An adventure with a goal.",
   level: "A stage you reach in a game."
+};
+
+const EASY_CLUES = {
+  bead: "A small round thing you can put on a string.",
+  feast: "A very big meal.",
+  cheat: "To break the rules to win.",
+  clean: "Not dirty.",
+  sneak: "To move quietly so no one notices.",
+  deal: "An agreement, or a good price.",
+  hear: "To use your ears.",
+  dream: "A story in your mind while you sleep.",
+  fear: "The feeling when you are scared.",
+  bean: "A small food that grows in a pod.",
+  flea: "A tiny jumping bug.",
+  dear: "Someone loved, or a way to begin a letter.",
+  heal: "To get better after being hurt.",
+  clear: "Easy to see through or understand.",
+  braid: "Hair woven into three parts.",
+  chain: "Metal links joined together.",
+  fail: "To not succeed.",
+  jail: "A place where people are kept after breaking the law.",
+  paid: "Gave money for something.",
+  plain: "Simple, with nothing fancy.",
+  train: "A long vehicle that runs on tracks.",
+  maid: "A person who cleans rooms.",
+  rain: "Water that falls from clouds.",
+  rail: "A long bar, like on stairs or train tracks.",
+  paint: "Color you brush onto a wall or picture.",
+  cheek: "The side of your face.",
+  feed: "To give food.",
+  sleep: "What you do at night in bed.",
+  week: "Seven days.",
+  wheel: "A round part that helps something roll.",
+  sweet: "Tasting like sugar.",
+  sheep: "A woolly farm animal.",
+  queen: "A woman ruler.",
+  deer: "An animal that may have antlers.",
+  coat: "Clothing you wear over your shirt when it is cold.",
+  float: "To stay on top of water.",
+  throat: "The front inside part of your neck.",
+  boat: "Something that travels on water.",
+  goat: "A farm animal that says baa or bleats.",
+  road: "A path where cars drive.",
+  juice: "A drink made from fruit.",
+  fruit: "Food like apples, grapes, or bananas.",
+  rolled: "Moved by turning over and over.",
+  usually: "Most of the time.",
+  hours: "Parts of time; there are 24 in a day.",
+  byte: "A small unit of computer information.",
+  fingers: "The parts at the ends of your hands.",
+  character: "A person in a story.",
+  twenty: "The number after nineteen.",
+  extend: "To make longer.",
+  except: "Not including.",
+  friends: "People you like and spend time with.",
+  products: "Things that are made or sold.",
+  keyboard: "The keys you type on.",
+  speed: "How fast something moves.",
+  whom: "A word used for a person receiving an action.",
+  happened: "Took place.",
+  monitor: "A computer screen.",
+  "couldn't": "A short way to say could not.",
+  heard: "Used your ears in the past.",
+  whine: "To complain in a high voice.",
+  vowel: "A letter like a, e, i, o, or u.",
+  questions: "Things you ask.",
+  order: "The way things are arranged.",
+  measure: "To find how long, heavy, or big something is.",
+  portal: "A doorway or entrance.",
+  catch: "To grab something moving through the air.",
+  villain: "The bad guy in a story.",
+  remember: "To keep something in your mind.",
+  tunnel: "A passage under or through something.",
+  itself: "That thing on its own.",
+  basin: "A bowl-shaped container or low area.",
+  early: "Before the usual time.",
+  against: "Touching or opposing something.",
+  mark: "A spot, sign, or score.",
+  carton: "A box, often for milk or eggs.",
+  utensil: "A tool used for eating or cooking.",
+  pastel: "A light, soft color.",
+  button: "Something you press, or fasten on clothing.",
+  become: "To turn into.",
+  mortal: "Able to die.",
+  numerical: "Having to do with numbers.",
+  bargain: "A good deal or low price.",
+  muffin: "A small baked bread or cake.",
+  vocal: "Having to do with the voice.",
+  fatal: "Causing death.",
+  certain: "Sure."
 };
 
 const CLUE_HINTS = {
@@ -1471,7 +1567,7 @@ function cleanWord(word) {
 
 function makeClue(word) {
   const lower = word.toLowerCase();
-  const clue = CLUES[lower] || CLUE_HINTS[lower] || GENERATED_CLUES[lower];
+  const clue = EASY_CLUES[lower] || CLUES[lower] || CLUE_HINTS[lower] || GENERATED_CLUES[lower];
   if (clue) return formatClue(clue);
   if (word.endsWith("ing")) return `An action happening right now, ending with the sound "ing".`;
   if (word.endsWith("ed")) return `An action that already happened, ending with the sound "ed".`;
@@ -1482,6 +1578,10 @@ function formatClue(clue) {
   const cleaned = clue
     .replace(/^A word meaning:\s*/i, "")
     .replace(/^A word meaning\s+/i, "")
+    .split(/[;[]/)[0]
+    .replace(/\s*,\s*especially.*$/i, "")
+    .replace(/\s*,\s*usually.*$/i, "")
+    .replace(/\s*,\s*often.*$/i, "")
     .trim();
   return cleaned ? cleaned[0].toUpperCase() + cleaned.slice(1) : clue;
 }
@@ -1533,6 +1633,8 @@ function makeFreshProfile(profile) {
     reviewQueue: [],
     shakyQueue: [],
     lastSession: null,
+    rewardCyclesCompleted: 0,
+    rewardCycle: makeFreshRewardCycle(),
     math: {
       gradeTrack: mathGradeTrack,
       levelId: mathLevelId,
@@ -1572,6 +1674,19 @@ function ensureProfileShape(profile) {
     profile.math.gradeTrack = allowedGrade;
     profile.math.levelId = MATH_GRADES[allowedGrade].levels[0][0];
   }
+  if (profile.rewardCyclesCompleted == null) profile.rewardCyclesCompleted = Math.floor((profile.points || 0) / ALLOWANCE_POINT_GOAL);
+  profile.rewardCycle = { ...makeFreshRewardCycle(), ...(profile.rewardCycle || {}) };
+  profile.rewardCycle.mathLevels ||= [];
+  profile.rewardCycle.mathModes ||= [];
+}
+
+function makeFreshRewardCycle() {
+  return {
+    spellingSessions: 0,
+    mathSessions: 0,
+    mathLevels: [],
+    mathModes: []
+  };
 }
 
 function getAllowedMathGrade(profile) {
@@ -1700,6 +1815,7 @@ function renderDashboard() {
           </b>
         </div>
         <p class="track-copy">${allowance.pointsIntoGoal}/${ALLOWANCE_POINT_GOAL} points toward the next $10 • ${profile.marker} is on the move</p>
+        ${profile.kind !== "early" ? renderRewardChecklist(profile) : ""}
       </section>
 
       <section class="next-card">
@@ -1710,6 +1826,8 @@ function renderDashboard() {
         </div>
         <button class="primary-btn" data-action="start-session">Start</button>
       </section>
+
+      ${profile.kind !== "early" ? renderSpellingParentPanel(profile) : ""}
 
       <section class="parent-tools">
         <button class="secondary-btn" data-action="reset-player">Reset ${profile.name}</button>
@@ -1790,6 +1908,7 @@ function renderMathDashboard(profile) {
           </b>
         </div>
         <p class="track-copy">${allowance.pointsIntoGoal}/${ALLOWANCE_POINT_GOAL} points toward the next $10 • ${profile.marker} is on the move</p>
+        ${profile.kind !== "early" ? renderRewardChecklist(profile) : ""}
       </section>
 
       <section class="selector-panel">
@@ -1869,10 +1988,63 @@ function renderMathDashboard(profile) {
 
 function getAllowanceProgress(profile) {
   const points = profile.points || 0;
-  const earnedDollars = Math.floor(points / ALLOWANCE_POINT_GOAL) * 10;
-  const pointsIntoGoal = points % ALLOWANCE_POINT_GOAL;
+  const earnedDollars = (profile.rewardCyclesCompleted || 0) * 10;
+  const rewardsAvailableByPoints = Math.floor(points / ALLOWANCE_POINT_GOAL);
+  const hasLockedReward = rewardsAvailableByPoints > (profile.rewardCyclesCompleted || 0);
+  const pointsIntoGoal = hasLockedReward ? ALLOWANCE_POINT_GOAL : points % ALLOWANCE_POINT_GOAL;
   const percent = Math.min(100, Math.round((pointsIntoGoal / ALLOWANCE_POINT_GOAL) * 100));
   return { earnedDollars, pointsIntoGoal, percent };
+}
+
+function renderRewardChecklist(profile) {
+  const cycle = profile.rewardCycle || makeFreshRewardCycle();
+  return `
+    <div class="reward-checklist">
+      <span class="${cycle.spellingSessions >= REWARD_REQUIREMENTS.spellingSessions ? "done" : ""}">Words ${Math.min(cycle.spellingSessions, REWARD_REQUIREMENTS.spellingSessions)}/${REWARD_REQUIREMENTS.spellingSessions}</span>
+      <span class="${cycle.mathSessions >= REWARD_REQUIREMENTS.mathSessions ? "done" : ""}">Math ${Math.min(cycle.mathSessions, REWARD_REQUIREMENTS.mathSessions)}/${REWARD_REQUIREMENTS.mathSessions}</span>
+      <span class="${cycle.mathLevels.length >= REWARD_REQUIREMENTS.mathLevels ? "done" : ""}">Levels ${Math.min(cycle.mathLevels.length, REWARD_REQUIREMENTS.mathLevels)}/${REWARD_REQUIREMENTS.mathLevels}</span>
+      <span class="${cycle.mathModes.length >= REWARD_REQUIREMENTS.mathModes ? "done" : ""}">Modes ${Math.min(cycle.mathModes.length, REWARD_REQUIREMENTS.mathModes)}/${REWARD_REQUIREMENTS.mathModes}</span>
+    </div>
+  `;
+}
+
+function renderSpellingParentPanel(profile) {
+  const stats = Object.entries(profile.wordStats || {}).map(([word, stat]) => ({ word, ...stat }));
+  const totalCorrect = stats.reduce((sum, stat) => sum + stat.correct, 0);
+  const totalMissed = stats.reduce((sum, stat) => sum + stat.missed, 0);
+  const totalAttempts = totalCorrect + totalMissed;
+  const accuracy = totalAttempts ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
+  const needsPractice = stats
+    .filter((stat) => stat.missed > 0)
+    .sort((left, right) => right.missed - left.missed || left.correct - right.correct)
+    .slice(0, 8);
+  const mostPracticed = stats
+    .sort((left, right) => right.correct + right.missed - (left.correct + left.missed))
+    .slice(0, 8);
+  return `
+    <section class="parent-panel">
+      <div>
+        <p class="eyebrow">Parent Progress</p>
+        <h2>Spelling</h2>
+      </div>
+      <div class="parent-grid">
+        <div><span class="metric-label">Accuracy</span><strong>${accuracy}%</strong></div>
+        <div><span class="metric-label">Words Attempted</span><strong>${stats.length}</strong></div>
+        <div><span class="metric-label">Correct</span><strong>${totalCorrect}</strong></div>
+        <div><span class="metric-label">Needs Review</span><strong>${needsPractice.length}</strong></div>
+      </div>
+      <div class="insight-grid">
+        <div>
+          <p class="metric-label">Needs Practice</p>
+          <p>${needsPractice.length ? needsPractice.map((item) => `${item.word} (${item.missed})`).join(", ") : "Nothing in the review bank yet."}</p>
+        </div>
+        <div>
+          <p class="metric-label">Most Practiced</p>
+          <p>${mostPracticed.length ? mostPracticed.map((item) => item.word).join(", ") : "Play a round to fill this in."}</p>
+        </div>
+      </div>
+    </section>
+  `;
 }
 
 function renderGame() {
@@ -2567,7 +2739,7 @@ function shouldFinishMathSession(session) {
 
 function finishMathSession() {
   const profile = currentProfile();
-  const previousRewards = Math.floor((profile.points || 0) / ALLOWANCE_POINT_GOAL);
+  const previousRewards = profile.rewardCyclesCompleted || 0;
   profile.points += state.session.points;
   profile.lifetimePoints = (profile.lifetimePoints || 0) + state.session.points;
   profile.math.xp += state.session.xp;
@@ -2584,7 +2756,8 @@ function finishMathSession() {
     completed: state.session.completed,
     missed: state.session.missed
   };
-  const currentRewards = Math.floor((profile.points || 0) / ALLOWANCE_POINT_GOAL);
+  recordRewardMathSession(profile, state.session);
+  const currentRewards = maybeUnlockReward(profile);
   state.session.rewardUnlocked = currentRewards > previousRewards;
   saveStore();
   state.screen = "summary";
@@ -3191,11 +3364,9 @@ function nextWord() {
 
 function finishSession() {
   const profile = currentProfile();
-  const previousRewards = Math.floor((profile.points || 0) / ALLOWANCE_POINT_GOAL);
+  const previousRewards = profile.rewardCyclesCompleted || 0;
   profile.points += state.session.points;
   profile.lifetimePoints = (profile.lifetimePoints || 0) + state.session.points;
-  const currentRewards = Math.floor((profile.points || 0) / ALLOWANCE_POINT_GOAL);
-  state.session.rewardUnlocked = currentRewards > previousRewards;
   profile.sessionsDone += 1;
   profile.lastSession = {
     date: new Date().toISOString(),
@@ -3204,6 +3375,7 @@ function finishSession() {
     completed: state.session.completed,
     missed: state.session.missed
   };
+  recordRewardSpellingSession(profile);
   profile.reviewQueue = mergeReviewQueue(profile.reviewQueue || [], state.session.missed);
   profile.shakyQueue = mergeReviewQueue(profile.shakyQueue || [], state.session.shaky).filter(
     (word) => !state.session.missed.some((missedWord) => missedWord.toLowerCase() === word.toLowerCase())
@@ -3213,8 +3385,43 @@ function finishSession() {
   profile.wordsMastered = Object.entries(profile.wordStats)
     .filter(([, stat]) => stat.correct >= 2 && stat.missed === 0)
     .map(([word]) => word);
+  const currentRewards = maybeUnlockReward(profile);
+  state.session.rewardUnlocked = currentRewards > previousRewards;
   saveStore();
   state.screen = "summary";
+}
+
+function recordRewardSpellingSession(profile) {
+  if (profile.kind === "early") return;
+  profile.rewardCycle.spellingSessions += 1;
+}
+
+function recordRewardMathSession(profile, session) {
+  if (profile.kind === "early") return;
+  profile.rewardCycle.mathSessions += 1;
+  profile.rewardCycle.mathLevels = [...new Set([...profile.rewardCycle.mathLevels, session.levelId])];
+  profile.rewardCycle.mathModes = [...new Set([...profile.rewardCycle.mathModes, session.practiceMode])];
+}
+
+function rewardCycleIsComplete(profile) {
+  if (profile.kind === "early") return true;
+  const cycle = profile.rewardCycle || makeFreshRewardCycle();
+  return (
+    cycle.spellingSessions >= REWARD_REQUIREMENTS.spellingSessions &&
+    cycle.mathSessions >= REWARD_REQUIREMENTS.mathSessions &&
+    cycle.mathLevels.length >= REWARD_REQUIREMENTS.mathLevels &&
+    cycle.mathModes.length >= REWARD_REQUIREMENTS.mathModes
+  );
+}
+
+function maybeUnlockReward(profile) {
+  const pointsRewardsAvailable = Math.floor((profile.points || 0) / ALLOWANCE_POINT_GOAL);
+  const currentRewards = profile.rewardCyclesCompleted || 0;
+  if (pointsRewardsAvailable > currentRewards && rewardCycleIsComplete(profile)) {
+    profile.rewardCyclesCompleted = currentRewards + 1;
+    profile.rewardCycle = makeFreshRewardCycle();
+  }
+  return profile.rewardCyclesCompleted || 0;
 }
 
 function updateWordStat(word, correct, points) {
