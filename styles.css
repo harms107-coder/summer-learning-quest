@@ -638,6 +638,42 @@ button {
   font-size: clamp(4.2rem, 19vw, 8.5rem);
 }
 
+.addition-build {
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  gap: clamp(12px, 4vw, 28px);
+}
+
+.addition-group {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+}
+
+.addition-group b,
+.addition-build strong {
+  font-size: inherit;
+  line-height: 0.9;
+}
+
+.mini-dot-row {
+  display: flex;
+  max-width: min(180px, 30vw);
+  min-height: 40px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+  font-style: normal;
+}
+
+.mini-dot-row i {
+  width: clamp(13px, 3vw, 20px);
+  height: clamp(13px, 3vw, 20px);
+  border-radius: 50%;
+  background: var(--gold);
+}
+
 .pattern-row {
   display: flex;
   flex-wrap: wrap;
@@ -1122,6 +1158,40 @@ button {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.audio-audit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.audio-audit-row {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 8px 10px;
+  font-weight: 850;
+}
+
+.audit-audio-btn {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--gold);
+}
+
+.audit-audio-btn .audio-icon {
+  width: 24px;
+  height: 24px;
+}
+
 .mode-switch {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -1350,7 +1420,8 @@ button {
   .practice-grid,
   .level-grid,
   .parent-grid,
-  .insight-grid {
+  .insight-grid,
+  .audio-audit-grid {
     grid-template-columns: 1fr;
   }
 

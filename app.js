@@ -1711,6 +1711,7 @@ function render() {
       ${renderBackdrop()}
       ${state.screen === "home" ? renderHome() : ""}
       ${state.screen === "parent" ? renderParentStats() : ""}
+      ${state.screen === "audio-audit" ? renderAudioAudit() : ""}
       ${state.screen === "dashboard" ? renderDashboard() : ""}
       ${state.screen === "play" ? renderGame() : ""}
       ${state.screen === "summary" ? renderSummary() : ""}
@@ -1824,8 +1825,101 @@ function renderParentStatsCard(profile) {
           <p>${needsFacts.length ? needsFacts.map((item) => item.label).join(", ") : "Nothing flagged yet."}</p>
         </div>
       </div>
+      ${profile.kind === "early" ? `<button class="secondary-btn" data-action="audio-audit">Check Thurston Audio</button>` : ""}
     </article>
   `;
+}
+
+function renderAudioAudit() {
+  const prompts = getRecordedAudioPrompts();
+  return `
+    <section class="dashboard-view">
+      <header class="topbar">
+        <button class="icon-btn" data-action="parent-stats" aria-label="Back to parent stats">←</button>
+        <div>
+          <p class="eyebrow">Parent View</p>
+          <h1>Audio Check</h1>
+        </div>
+      </header>
+      <section class="parent-panel">
+        <div>
+          <p class="eyebrow">Thurston</p>
+          <h2>${prompts.length} prompts</h2>
+        </div>
+        <div class="audio-audit-grid">
+          ${prompts
+            .map(
+              (prompt) => `
+                <div class="audio-audit-row">
+                  <span>${escapeHtml(prompt)}</span>
+                  ${renderAudioButton(prompt, "audit-audio-btn")}
+                </div>
+              `
+            )
+            .join("")}
+        </div>
+      </section>
+    </section>
+  `;
+}
+
+function getRecordedAudioPrompts() {
+  return [
+    ...Array.from({ length: 99 }, (_, index) => String(index + 1)),
+    "a",
+    "add them up",
+    "am",
+    "at",
+    "away",
+    "big",
+    "blue",
+    "can",
+    "circle",
+    "come",
+    "diamond",
+    "do",
+    "down",
+    "find",
+    "go",
+    "green",
+    "he",
+    "heart",
+    "help",
+    "here",
+    "how many dots",
+    "i",
+    "in",
+    "is",
+    "it",
+    "jump",
+    "like",
+    "little",
+    "look",
+    "make",
+    "me",
+    "my",
+    "no",
+    "one",
+    "orange",
+    "play",
+    "purple",
+    "red",
+    "run",
+    "see",
+    "she",
+    "square",
+    "star",
+    "the",
+    "three",
+    "to",
+    "triangle",
+    "two",
+    "up",
+    "we",
+    "what comes next",
+    "yellow",
+    "yes"
+  ];
 }
 
 function renderDashboard() {
@@ -2240,7 +2334,7 @@ function renderLetterMix(mix) {
 
 function renderEarlyTarget(item) {
   if (item.mode === "number") return `<span class="dot-row">${renderDots(item.display)}</span>`;
-  if (item.mode === "addition") return escapeHtml(item.display);
+  if (item.mode === "addition") return renderAdditionTarget(item);
   if (item.mode === "pattern") {
     return `
       <span class="pattern-row">
@@ -2251,6 +2345,23 @@ function renderEarlyTarget(item) {
   }
   if (item.mode === "shape" || item.mode === "color" || item.mode === "spoken-number") return renderAudioButton(item.speakText, "listen-hero");
   return escapeHtml(item.display);
+}
+
+function renderAdditionTarget(item) {
+  const [left, right] = item.display.split(" + ").map(Number);
+  return `
+    <span class="addition-build">
+      <span class="addition-group">
+        <b>${left}</b>
+        <em class="mini-dot-row">${renderDots(left)}</em>
+      </span>
+      <strong>+</strong>
+      <span class="addition-group">
+        <b>${right}</b>
+        <em class="mini-dot-row">${renderDots(right)}</em>
+      </span>
+    </span>
+  `;
 }
 
 function renderAudioButton(text, className) {
@@ -2568,6 +2679,7 @@ function handleAction(action, dataset) {
     state.screen = "dashboard";
   }
   if (action === "parent-stats") state.screen = "parent";
+  if (action === "audio-audit") state.screen = "audio-audit";
   if (action === "set-mode") {
     state.mode = dataset.mode;
     state.session = null;
